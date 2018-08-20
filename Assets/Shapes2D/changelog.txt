@@ -1,0 +1,109 @@
+v1.12 - Submitted Nov 25, 2017
+- Polygon and Path shape types have a button to read their points from a PolygonCollider2D 
+  (points outside the shape's bounding rect will be clamped, though)
+- Polygon shape type now has a button to create a PolygonCollider2D
+- Arrow polygon preset now points to the right
+
+
+v1.11 - Submitted June 10, 2017
+- Updated anti-aliasing to avoid using certain shader calls that aren't 
+  supported on all Android devices (resulting in shaders failing to compile).  
+  The new method hopefully works across all possible platforms.
+- Numerous fixes for polygon/path editing
+- Fixed some glitchiness with certain ellipse settings
+- Fixed warnings in newer versions of Unity
+- Revamped UI demo to look nicer and have more widget examples
+- Changed the default shape settings and prefabs a bit
+- Minimum supported Unity version is now 5.4.0f3
+
+
+v1.10 - Submitted Jan 15, 2017
+- Shapes now support the color property that can be set in Sprite and Image components.
+  This allows you to set tints or opacity values across an entire shape, as well as 
+  use the "Color Tint" transition type on Buttons and other UI elements.  It also makes
+  Unity's Shadow UI component work properly.
+
+
+v1.9 - Submitted Nov 27, 2016 
+- New Path shape type for drawing lines and curves
+- Comes with Fill Path Loops option for making arbitrary filled shapes
+- New shape prefabs for Curve, Line Path and Filled Path
+- Help for editing polygons and paths in the inspector
+- Specify shader target 3.0
+- UserProps.vertices is renamed to polyVertices
+- Editor fixes for high DPI screens
+- Updated showcase demo
+- Updated online documentation
+
+
+v1.8 - Submitted Oct 19, 2016
+
+- Added /Shapes2D/Preferences for changing the pixels-per-unit value used during 
+  sprite conversion
+- Simplified rectangle drawing
+- Fixed a warning in newer Unity versions
+
+
+v1.7 - Submitted Sep 29, 2016
+
+- Ellipses can now be transformed into donuts, arcs, pies and wedges using the new inner 
+  cutout and start/end angle properties
+- Removed the glitchy "correct scaling" property from the Ellipse inspector (though it is 
+  still available from code if you really want it)
+- Added some more shape templates to the Shapes2D menu and adjusted a few others
+- Template prefabs now get a random color when instantiated for some nice variety
+- Updated online documentation
+
+
+v1.6 - Submitted Sep 20, 2016
+
+- Fix for shapes disappearing in the scene view when certain events happen in the editor
+- Create shape menu moved out of "Create Other" into its own category
+
+
+v1.5 - Submitted Aug 29, 2016
+
+- Fix for shapes disappearing in the scene view when certain events happen in the editor
+- Create shape menu organized into Sprites and UI folders
+- A few other small bug fixes
+
+
+v1.4 - Submitted Aug 1, 2016
+
+- Fix for UI shapes not updating correctly when you resize them
+
+
+v1.3 - Submitted July 27, 2016
+
+- Make custom polygons with the "Edit Shape" button!
+- New polygon presets Star and Arrow
+- Performance improvements for large numbers of on-screen non-dynamic shapes
+- Performance improvements for ellipses
+- Various editor tweaks and fixes
+- Included Stress Test demo
+- Updated online documentation and readme.txt
+
+
+v1.2 - Submitted July 3, 2016
+
+- Fixed a bug where the "Convert to Sprite" feature would export a PNG but not correctly
+  convert the Shape to use its SpriteRenderer or Image Component
+- UI Shapes now work with Mask and RectMask2D, both as maskable objects and as masks 
+- Documentation for Shapes2D's public API
+- Updated readme.txt 
+
+
+v1.1 - Submitted June 7, 2016
+
+- Fixed problems where some shapes would appear wrong or not appear at all on some platforms
+- Optimized and improved shaders
+- Implemented resolution-independent anti-aliasing for shapes with blur == 0 
+- Anti-aliasing for grid, stripe and checkerboard fill types too
+- "Correct scaling" option for ellipses (previously this was always turned on)
+- Included "Flappy Shapes" demo game
+- Updated readme.txt
+
+
+v1.0 - May 23, 2016
+
+- Initial release!
