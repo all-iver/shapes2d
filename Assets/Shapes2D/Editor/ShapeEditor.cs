@@ -659,6 +659,29 @@
                     colliderPoints[i] = shape.transform.InverseTransformPoint(points[i]);
                 Undo.RecordObject(pc2d, "Set PolygonCollider2D Points");
                 pc2d.points = colliderPoints;
+            } else if (shape.settings.shapeType == ShapeType.Path) {
+                // note - this quick and dirty algorithm only works for paths with a single closed loop.  also, it
+                // calculates the number of points in a naive way so very large shapes will have lots of collider
+                // points.  a smarter algorithm might put more collider points on curvier sections of the path.
+                if (!pc2d)
+                    pc2d = shape.gameObject.AddComponent<PolygonCollider2D>();
+                PathSegment[] segments = shape.GetPathWorldSegments();
+                List<Vector2> colliderPoints = new List<Vector2>();
+                int pointsPerUnit = 5;
+                for (int i = 0; i < segments.Length; i++) {
+                    // figure out how many collider points we'll add on this segment based on its length
+                    int numPoints = Mathf.FloorToInt(segments[i].GetLength() * pointsPerUnit);
+                    // add a point for the start of the segment
+                    Vector3 point = segments[i].p0;
+                    colliderPoints.Add(shape.transform.InverseTransformPoint(point));
+                    // add more points along the curve
+                    for (int c = 0; c < numPoints; c++) {
+                        point = segments[i].GetPoint((1f / numPoints) * (c + 1));
+                        colliderPoints.Add(shape.transform.InverseTransformPoint(point));
+                    }
+                }
+                Undo.RecordObject(pc2d, "Set PolygonCollider2D Points");
+                pc2d.points = colliderPoints.ToArray();
             }
         }
 
@@ -828,6 +851,8 @@
                 }
                 if (shape.GetComponent<PolygonCollider2D>() && GUILayout.Button("From Polygon Collider 2D"))
                     FromPolygonCollider2D(shape);
+                if (GUILayout.Button("Set Polygon Collider 2D"))
+                    SetPolygonCollider2D(shape);
                 EditorGUI.EndDisabledGroup();
             }            
 
