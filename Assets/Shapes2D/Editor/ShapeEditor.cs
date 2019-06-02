@@ -140,13 +140,13 @@
             return graphicStates;
         }
 
+        // fixme - this needs more error handling so we don't leave objects in a weird place if something goes wrong
         private static Vector2 RenderToTexture2D(string path, Shape shape, float pixelsPerUnit = 100) {
             // reset the shape's rotation
             Quaternion oldRotation = shape.transform.rotation;
             shape.transform.rotation = Quaternion.identity;
 
-            // get the bounds of our shape and all its children
-            Bounds bounds = shape.GetShapeBounds();
+            // get the desired pixel size of our shape and all its children, which will be the size of our texture
             Vector2 size = shape.GetShapePixelSize(pixelsPerUnit: pixelsPerUnit);
             int w = (int) size.x;
             int h = (int) size.y;
@@ -160,18 +160,26 @@
             Canvas canvas = shape.GetComponentInParent<Canvas>();
             int oldCanvasLayer = -1;
             RenderMode oldRenderMode = 0;
+            Vector3 oldCanvasScale = Vector3.one;
             List<GraphicState> modifiedGraphics = null;
             if (canvas) {
                 oldCanvasLayer = canvas.gameObject.layer;
                 canvas.gameObject.layer = 31;
                 oldRenderMode = canvas.renderMode;
+                // fixme - what happens with nested canvases?
                 canvas.renderMode = RenderMode.WorldSpace;
+                // if the canvas was in RenderMode.ScreenSpaceCamera then the scale will be weird now that we switched
+                // to WorldSpace.  in that case we set the scale to one.
+                if (oldRenderMode == RenderMode.ScreenSpaceCamera) {
+                    oldCanvasScale = canvas.transform.localScale;
+                    canvas.transform.localScale = Vector3.one;
+                }
                 // without a way to selectively show just the shape we want, this is 
                 // the only way I can think of to do it.  even this won't work if the
                 // user has a UI component not found by this function.
                 modifiedGraphics = DisableUIGraphics(canvas);
             }
-            
+
             // make a new render texture
             RenderTexture rt = new RenderTexture(w, h, 32, RenderTextureFormat.ARGB32);
             rt.filterMode = FilterMode.Point;
@@ -182,6 +190,9 @@
             #endif
             rt.Create();
             
+            // figure out the world space bounds of the shape so we can point the camera at it
+            Bounds bounds = shape.GetShapeBounds();
+
             // set up the camera to point exactly at the object's bounds and set its
             // culling layer to show only layer 31
             // note that if the user has anything on layer 31 then it will also
@@ -253,6 +264,8 @@
             // restore the canvas
             if (canvas) {
                 canvas.gameObject.layer = oldCanvasLayer;
+                if (oldRenderMode == RenderMode.ScreenSpaceCamera)
+                    canvas.transform.localScale = oldCanvasScale;
                 canvas.renderMode = oldRenderMode;
                 foreach (GraphicState gs in modifiedGraphics) {
                     gs.graphic.enabled = true;
