@@ -951,8 +951,14 @@
                 // bottomLeft = transform.InverseTransformPoint(bottomLeft);
                 // topRight = transform.InverseTransformPoint(topRight);
                 // bottomRight = transform.InverseTransformPoint(bottomRight);
-                size.x = Vector2.Distance(topLeft, topRight) / image.canvas.scaleFactor;
-                size.y = Vector2.Distance(topLeft, bottomLeft) / image.canvas.scaleFactor;
+                // if the canvas is in ScreenSpaceCamera mode, Unity does some calculations based on the plane distance
+                // and the camera's aspect and fov.  I'm not sure exactly what Unity does but using the canvas scale 
+                // seems to be a shortcut.
+                var scaleFactor = image.canvas.scaleFactor;
+                if (image.canvas.renderMode == RenderMode.ScreenSpaceCamera)
+                    scaleFactor = image.canvas.transform.lossyScale.x;
+                size.x = Vector2.Distance(topLeft, topRight) / scaleFactor;
+                size.y = Vector2.Distance(topLeft, bottomLeft) / scaleFactor;
             } else {
                 // get the size for normal Transform objects
                 size.x = transform.lossyScale.x;
@@ -1502,8 +1508,11 @@
                     // if the screen space has been stretched by a CanvasScaler, the values
                     // will be dependent on the current game window size which we don't want,
                     // so check the scaleFactor.
-                    w = Mathf.Max(1, Mathf.RoundToInt(bounds.size.x / image.canvas.scaleFactor));
-                    h = Mathf.Max(1, Mathf.RoundToInt(bounds.size.y / image.canvas.scaleFactor));
+                    var scaleFactor = image.canvas.scaleFactor;
+                    if (image.canvas.renderMode == RenderMode.ScreenSpaceCamera)
+                        scaleFactor = image.canvas.transform.lossyScale.x;
+                    w = Mathf.Max(1, Mathf.RoundToInt(bounds.size.x / scaleFactor));
+                    h = Mathf.Max(1, Mathf.RoundToInt(bounds.size.y / scaleFactor));
                 }
                 return new Vector2(w, h);
             } else {
