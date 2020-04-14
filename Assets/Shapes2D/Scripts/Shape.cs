@@ -923,8 +923,8 @@
                 bottomLeft = transform.InverseTransformPoint(bottomLeft);
                 topRight = transform.InverseTransformPoint(topRight);
                 bottomRight = transform.InverseTransformPoint(bottomRight);
-                size.x = Vector2.Distance(topLeft, topRight);
-                size.y = Vector2.Distance(topLeft, bottomLeft);
+                size.x = Vector3.Distance(topLeft, topRight);
+                size.y = Vector3.Distance(topLeft, bottomLeft);
                 size /= image.canvas.scaleFactor;
             } else {
                 return new Vector2(1, 1);
@@ -957,8 +957,8 @@
                 var scaleFactor = image.canvas.scaleFactor;
                 if (image.canvas.renderMode == RenderMode.ScreenSpaceCamera)
                     scaleFactor = image.canvas.transform.lossyScale.x;
-                size.x = Vector2.Distance(topLeft, topRight) / scaleFactor;
-                size.y = Vector2.Distance(topLeft, bottomLeft) / scaleFactor;
+                size.x = Vector3.Distance(topLeft, topRight) / scaleFactor;
+                size.y = Vector3.Distance(topLeft, bottomLeft) / scaleFactor;
             } else {
                 // get the size for normal Transform objects
                 size.x = transform.lossyScale.x;
