@@ -1065,7 +1065,7 @@
                 if (shaderSettings.usePolygonMap) {
                     if (shaderSettings.polyMap == null) {
                         shaderSettings.polyMap = new Texture2D(PolyMapResolution, 
-                                PolyMapResolution, TextureFormat.ARGB32, false);
+                                PolyMapResolution, TextureFormat.ARGB32, false, true);
                         shaderSettings.polyMap.filterMode = FilterMode.Point;
                         shaderSettings.polyMap.wrapMode = TextureWrapMode.Clamp;
                     }
