@@ -826,13 +826,24 @@
             material.SetFloat("_YScale", shaderSettings.yScale);
             material.SetFloat("_OutlineSize", shaderSettings.outlineSize);
             material.SetFloat("_Blur", shaderSettings.blur);
-            material.SetColor("_OutlineColor", shaderSettings.outlineColor);
+            // Colors from the inspector are in sRGB, but I found a unity forum post that says Unity is supposed to 
+            // convert to linear when you call material.SetColor().  however, we're not getting correct colors in
+            // linear color space unless we convert to linear here, so I'm not sure where it's going wrong.
+            var outlineColor = shaderSettings.outlineColor;
+            var fillColor = shaderSettings.fillColor;
+            var fillColor2 = shaderSettings.fillColor2;
+            if (QualitySettings.activeColorSpace == ColorSpace.Linear) {
+                outlineColor = outlineColor.linear;
+                fillColor = fillColor.linear;
+                fillColor2 = fillColor2.linear;
+            }
+            material.SetColor("_OutlineColor", outlineColor);
             if (shaderSettings.fillType >= FillType.SolidColor 
                     && shaderSettings.fillType < FillType.Texture)
-                material.SetColor("_FillColor", shaderSettings.fillColor);
+                material.SetColor("_FillColor", fillColor);
             if (shaderSettings.fillType >= FillType.Gradient
                     && shaderSettings.fillType < FillType.Texture)
-                material.SetColor("_FillColor2", shaderSettings.fillColor2);
+                material.SetColor("_FillColor2", fillColor2);
             if (shaderSettings.fillType > FillType.SolidColor) {
                 material.SetFloat("_FillRotation", shaderSettings.fillRotation);
                 material.SetFloat("_FillOffsetX", shaderSettings.fillOffset.x);
@@ -923,8 +934,8 @@
                 bottomLeft = transform.InverseTransformPoint(bottomLeft);
                 topRight = transform.InverseTransformPoint(topRight);
                 bottomRight = transform.InverseTransformPoint(bottomRight);
-                size.x = Vector3.Distance(topLeft, topRight);
-                size.y = Vector3.Distance(topLeft, bottomLeft);
+                size.x = Vector2.Distance(topLeft, topRight);
+                size.y = Vector2.Distance(topLeft, bottomLeft);
                 size /= image.canvas.scaleFactor;
             } else {
                 return new Vector2(1, 1);
@@ -957,8 +968,8 @@
                 var scaleFactor = image.canvas.scaleFactor;
                 if (image.canvas.renderMode == RenderMode.ScreenSpaceCamera)
                     scaleFactor = image.canvas.transform.lossyScale.x;
-                size.x = Vector3.Distance(topLeft, topRight) / scaleFactor;
-                size.y = Vector3.Distance(topLeft, bottomLeft) / scaleFactor;
+                size.x = Vector2.Distance(topLeft, topRight) / scaleFactor;
+                size.y = Vector2.Distance(topLeft, bottomLeft) / scaleFactor;
             } else {
                 // get the size for normal Transform objects
                 size.x = transform.lossyScale.x;
@@ -1065,7 +1076,7 @@
                 if (shaderSettings.usePolygonMap) {
                     if (shaderSettings.polyMap == null) {
                         shaderSettings.polyMap = new Texture2D(PolyMapResolution, 
-                                PolyMapResolution, TextureFormat.ARGB32, false, true);
+                                PolyMapResolution, TextureFormat.ARGB32, false);
                         shaderSettings.polyMap.filterMode = FilterMode.Point;
                         shaderSettings.polyMap.wrapMode = TextureWrapMode.Clamp;
                     }
