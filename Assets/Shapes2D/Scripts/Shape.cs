@@ -1006,6 +1006,10 @@
             
             if (settings.shapeType == ShapeType.Rectangle) {
                 // rectangle specific properties
+                var tl = settings.roundnessPerCorner ? settings.roundnessTopLeft : settings.roundness;
+                var tr = settings.roundnessPerCorner ? settings.roundnessTopRight : settings.roundness;
+                var bl = settings.roundnessPerCorner ? settings.roundnessBottomLeft : settings.roundness;
+                var br = settings.roundnessPerCorner ? settings.roundnessBottomRight : settings.roundness;
                 if (spriteRenderer) {
                     // for sprite-based shapes it makes more sense to have roundness
                     // be a percentage of the dimensions so you can scale up and down
@@ -1013,22 +1017,14 @@
                     float xScale = shaderSettings.xScale;
                     float yScale = shaderSettings.yScale;
                     shaderSettings.roundnessVec = new Vector4(
-                            Mathf.Min(settings.roundnessTopLeft * xScale / 2, 
-                                settings.roundnessTopLeft * yScale / 2),
-                            Mathf.Min(settings.roundnessTopRight * xScale / 2, 
-                                settings.roundnessTopRight * yScale / 2),
-                            Mathf.Min(settings.roundnessBottomLeft * xScale / 2, 
-                                settings.roundnessBottomLeft * yScale / 2),
-                            Mathf.Min(settings.roundnessBottomRight * xScale / 2, 
-                                settings.roundnessBottomRight * yScale / 2));
+                            Mathf.Min(tl * xScale / 2, tl * yScale / 2),
+                            Mathf.Min(tr * xScale / 2, tr * yScale / 2),
+                            Mathf.Min(bl * xScale / 2, bl * yScale / 2),
+                            Mathf.Min(br * xScale / 2, br * yScale / 2));
                 } else {
                     // for UI components, roundness should be in world units so when 
                     // you scale the component the borders stay the same size
-                    shaderSettings.roundnessVec = new Vector4(
-                            settings.roundnessTopLeft,
-                            settings.roundnessTopRight, 
-                            settings.roundnessBottomLeft,
-                            settings.roundnessBottomRight);
+                    shaderSettings.roundnessVec = new Vector4(tl, tr, bl, br);
                 }
             } else if (settings.shapeType == ShapeType.Ellipse) {
                 // ellipse specific properties

@@ -788,10 +788,6 @@
                     EditorGUILayout.PropertyField(roundnessBRProp);
                 } else {
                     EditorGUILayout.PropertyField(roundnessProp);
-                    roundnessTLProp.floatValue = roundnessProp.floatValue;          
-                    roundnessTRProp.floatValue = roundnessProp.floatValue;          
-                    roundnessBLProp.floatValue = roundnessProp.floatValue;          
-                    roundnessBRProp.floatValue = roundnessProp.floatValue;          
                 }
             } else if (shapeType == ShapeType.Ellipse) {
                 //ellipse props
