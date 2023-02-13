@@ -222,7 +222,7 @@
                 if (canvas) {
                     backup.Add((s.gameObject.layer, s.GetComponent<Graphic>().enabled));
                     s.gameObject.layer = 31;
-                    s.GetComponent<Graphic>().enabled = true;
+                    s.GetComponent<Graphic>().enabled = false;
                 } else  {
                     backup.Add((s.gameObject.layer, s.gameObject.GetComponent<SpriteRenderer>().enabled));
                     s.gameObject.layer = 31;
