@@ -213,6 +213,23 @@
             RenderTexture oldRT = RenderTexture.active;
             RenderTexture.active = rt;
 
+            // create a backup of the shape's layer and enabled state so we can manipulate 
+            // them and restore later.  set all shapes to layer 31 and disable their 
+            // graphics component.  this leaves any other components enabled so e.g. 
+            // SpriteMask on a child will still affect a parent.
+            List<(int oldLayer, bool wasEnabled)> backup = new List<(int oldLayer, bool wasEnabled)>();
+            foreach (Shape s in shapes) {
+                if (canvas) {
+                    backup.Add((s.gameObject.layer, s.GetComponent<Graphic>().enabled));
+                    s.gameObject.layer = 31;
+                    s.GetComponent<Graphic>().enabled = false;
+                } else  {
+                    backup.Add((s.gameObject.layer, s.gameObject.GetComponent<SpriteRenderer>().enabled));
+                    s.gameObject.layer = 31;
+                    s.gameObject.GetComponent<SpriteRenderer>().enabled = false;
+                }
+            }
+
             // draw each shape with blending turned off, and layer them on top of each
             // other with blending between shapes but not between a shape and the 
             // camera's background color, which is what would happen if we just let the
@@ -224,7 +241,16 @@
             // shapes but not between a shape and the background color, so that's why
             // we have to do it manually.
             Texture2D dstTex = null;
-            foreach (Shape s in shapes) {
+            for (int i = 0; i < shapes.Count; i++) {
+                if (!backup[i].wasEnabled) 
+                    continue;
+                // set this shape's graphic's enabled state to true so it will render
+                var s = shapes[i];
+                if (canvas) {
+                    s.GetComponent<Graphic>().enabled = true;
+                } else {
+                    s.gameObject.GetComponent<SpriteRenderer>().enabled = true;
+                }
                 if (canvas) {
                     Graphic g = s.GetComponent<Graphic>(); 
                     g.enabled = true;
@@ -248,6 +274,23 @@
                     } else {
                         s.GetComponent<Mask>().showMaskGraphic = false;
                     }
+                }
+                // set the graphic's enabled back to false
+                if (canvas) {
+                    s.GetComponent<Graphic>().enabled = false;
+                } else {
+                    s.gameObject.GetComponent<SpriteRenderer>().enabled = false;
+                }
+            }
+
+            // restore the layers and graphic enabled states
+            for (int i = 0; i < shapes.Count; i++) {
+                var s = shapes[i];
+                s.gameObject.layer = backup[i].oldLayer;
+                if (canvas) {
+                    s.GetComponent<Graphic>().enabled = backup[i].wasEnabled;
+                } else {
+                    s.gameObject.GetComponent<SpriteRenderer>().enabled = backup[i].wasEnabled;
                 }
             }
             
