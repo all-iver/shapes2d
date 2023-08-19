@@ -1,4 +1,6 @@
-﻿namespace Shapes2D {
+﻿using Unity.VisualScripting;
+
+namespace Shapes2D {
 
     using UnityEngine;
     using UnityEditor;
@@ -339,13 +341,18 @@
         void DrawShapeBorders(Shape shape) {
             Vector3[] corners = new Vector3[5];
             shape.GetWorldCorners(corners);
-            Handles.color = Color.white;
+            Handles.color = Color.red;
             Handles.DrawAAPolyLine(2f, corners);
         }
 
-        Vector3 GetMouseWorldPos() {
-            Vector2 mouseScreenPos = Event.current.mousePosition;
-            return HandleUtility.GUIPointToWorldRay(mouseScreenPos).origin;
+        static Vector3? GetMouseWorldPos(Transform transform) {
+            var ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
+            var plane = new Plane(transform.TransformDirection(Vector3.back), transform.position);
+            if (plane.Raycast(ray, out float rayDistance))
+            {
+                return ray.GetPoint(rayDistance);
+            }
+            return null;
         }
 
         void EditPolygon(Shape shape) {
@@ -374,10 +381,10 @@
             for (int i = verts.Count - 2; i >= 0; i--) {
                 Vector3 v = verts[i];
                 #if UNITY_5_6_OR_NEWER
-                    Vector3 newPos = CustomHandles.DragHandle(v, 0.05f * HandleUtility.GetHandleSize(v), 
+                    Vector3 newPos = CustomHandles.DragHandle(shape.transform, v, 0.05f * HandleUtility.GetHandleSize(v), 
                             Handles.DotHandleCap, pink, out dhResult);
                 #else
-                    Vector3 newPos = CustomHandles.DragHandle(v, 0.05f * HandleUtility.GetHandleSize(v), 
+                    Vector3 newPos = CustomHandles.DragHandle(shape.transform, v, 0.05f * HandleUtility.GetHandleSize(v), 
                             Handles.DotCap, pink, out dhResult);
                 #endif
                 if (deleteMode && dhResult == CustomHandles.DragHandleResult.LMBPress) {
@@ -386,7 +393,7 @@
                     changed = true;
                 } else if (!deleteMode && newPos != v) {
                     // the handle has been dragged, so move the vert to the new position
-                    verts[i] = new Vector2(newPos.x, newPos.y);
+                    verts[i] = newPos;
                     changed = true;
                 }
             }
@@ -410,13 +417,13 @@
                     // not too close to an existing vert, so draw a new one.  don't
                     // use an actual handle cause we want to intercept nearby clicks
                     // and not just clicks directly on the handle.
-                    Rect rect = new Rect();
-                    float dim = 0.05f * HandleUtility.GetHandleSize(closestPos);
-                    rect.center = closestPos - new Vector3(dim, dim, 0);
-                    rect.size = new Vector2(dim * 2, dim * 2);
-                    Handles.color = Color.white; // remove the weird tint it does
-                    Handles.DrawSolidRectangleWithOutline(rect, Color.green, Color.clear);
-                    if (Event.current.type == EventType.MouseDown) {
+                    var oldColor = Handles.color;
+                    Handles.color = Color.green;
+                    Handles.DotHandleCap(-1, closestPos, Quaternion.identity, 0.05f * HandleUtility.GetHandleSize(closestPos), 
+                            EventType.Repaint);
+                    Handles.color = oldColor;
+                    
+                    if (Event.current.type == EventType.MouseDown && Event.current.button == 0) {
                         // the user has clicked the new vert, so add it for real
                         // figure out which line segment it's on
                         int lineStart = GetClosestLineToPoint(closestPos, verts);
@@ -434,12 +441,12 @@
                 EditorUtility.SetDirty(target);
             } else {
                 HandleUtility.Repaint(); // to draw the new vert placeholder handle
-                if (Event.current.type == EventType.MouseDown && !isCloseToLine)
+                if (Event.current.type == EventType.MouseDown && !isCloseToLine && Event.current.button == 0 && !Event.current.alt)
                     StopEditingShape(true);
             }
         }
 
-        void DoMovePathPoint(List<PathSegment> segments, int i, Vector2 newPos) {
+        void DoMovePathPoint(List<PathSegment> segments, int i, Vector3 newPos) {
             PathSegment seg = segments[i / 3];
             Vector2 offset = seg.p1 - seg.midpoint;
             if (i % 3 == 0)
@@ -450,12 +457,12 @@
             segments[i / 3] = seg;
         }
 
-        void MovePathPointsAtPosition(List<PathSegment> segments, Vector2 oldPos, Vector2 newPos) {
+        void MovePathPointsAtPosition(List<PathSegment> segments, Vector3 oldPos, Vector3 newPos) {
             for (int i = 0; i < segments.Count; i++) {
                 PathSegment seg = segments[i];
-                if ((Vector2) seg.p0 == oldPos)
+                if (seg.p0 == oldPos)
                     DoMovePathPoint(segments, i * 3, newPos);
-                if ((Vector2) seg.p2 == oldPos)
+                if (seg.p2 == oldPos)
                     DoMovePathPoint(segments, i * 3 + 2, newPos);
             }
         }
@@ -463,7 +470,7 @@
         void MovePathPoint(List<PathSegment> segments, int i, Vector3 newPos, bool moveConnected = true) {
             PathSegment segment = segments[i / 3];
             if (i % 3 == 1) {
-                segment.p1 = (Vector2) newPos;
+                segment.p1 = newPos;
                 segments[i / 3] = segment;
                 return;
             }
@@ -488,8 +495,10 @@
                 Handles.color = pink;
             }
             bool splitMode = Event.current.shift;
-            Vector3 mouseWorldPos = GetMouseWorldPos();
-            bool isWithinBounds = shape.PointIsWithinShapeBounds(mouseWorldPos);
+            Vector3? mouseWorldPosOpt = GetMouseWorldPos(shape.transform);
+
+            Vector3 mouseWorldPos = mouseWorldPosOpt ?? Vector3.zero;
+            bool isWithinBounds = mouseWorldPosOpt.HasValue && shape.PointIsWithinShapeBounds(mouseWorldPos);
             // drag handle result for getting info from our handles
             CustomHandles.DragHandleResult dhResult;
             // draw handles for each existing point and check if they've been moved or clicked
@@ -527,7 +536,7 @@
                     Handles.DrawDottedLine(p, segment.p2, HandleUtility.GetHandleSize(p));
                     Handles.color = oldColor;
                 }
-                Vector3 newPos = CustomHandles.DragHandle(p, size, cap, pink, out dhResult);
+                Vector3 newPos = CustomHandles.DragHandle(shape.transform, p, size, cap, pink, out dhResult);
                 if (deleteMode && !isInfluencePoint && dhResult == CustomHandles.DragHandleResult.LMBPress) {
                     // the user clicked on the handle while in delete mode, so delete the segment
                     segments.RemoveAt(i / 3);
@@ -564,7 +573,8 @@
             // check if the mouse is hovering over a space where we could add a new point,
             // and draw it if so
             bool closeToExistingPoint = false;
-            if (!changed && !hasMaxSegments && !deleteMode) {
+            if (!changed && !hasMaxSegments && !deleteMode)
+            {
                 foreach (PathSegment s in segments) {
                     // if close to an existing point, we don't want to add a new one
                     if (Vector2.Distance(HandleUtility.WorldToGUIPoint(mouseWorldPos), 
@@ -587,7 +597,7 @@
                     // not too close to an existing vert, so draw a new one
                     // find the closest point
                     float closestDistance = 99999;
-                    Vector2 closestPoint = Vector2.zero;
+                    Vector3 closestPoint = Vector2.zero;
                     for (int i = 0; i < segments.Count; i++) {
                         float dist = Vector2.Distance(segments[i].p0, (Vector2) mouseWorldPos);
                         if (dist < closestDistance) {
@@ -602,18 +612,16 @@
                     }
                     // don't use an actual handle cause we want to intercept nearby clicks
                     // and not just clicks directly on the handle.
-                    Rect rect = new Rect();
-                    float dim = 0.05f * HandleUtility.GetHandleSize(mouseWorldPos);
-                    rect.center = mouseWorldPos - new Vector3(dim, dim, 0);
-                    rect.size = new Vector2(dim * 2, dim * 2);
-                    Handles.color = Color.white; // remove the weird tint it does
-                    Handles.DrawSolidRectangleWithOutline(rect, Color.green, Color.clear);
-                    Color oldColor = Handles.color;
+                    var oldColor = Handles.color;
+                    Handles.color = Color.green;
+                    Handles.DotHandleCap(-1, mouseWorldPos, Quaternion.identity, 0.05f * HandleUtility.GetHandleSize(mouseWorldPos), 
+                        EventType.Repaint);
+                    
                     Handles.color = Color.grey;
-                    Handles.DrawDottedLine(rect.center, closestPoint, HandleUtility.GetHandleSize(closestPoint));
+                    Handles.DrawDottedLine(mouseWorldPos, closestPoint, HandleUtility.GetHandleSize(closestPoint));
                     Handles.color = oldColor;
                     if (Event.current.type == EventType.MouseDown && !Event.current.alt 
-                            && !Event.current.shift && !Event.current.command && !Event.current.control) {
+                            && !Event.current.shift && !Event.current.command && !Event.current.control && Event.current.button == 0) {
                         // the user has clicked to add a new segment, so add it for real
                         segments.Add(new PathSegment(closestPoint, mouseWorldPos));
                         changed = true;
@@ -627,7 +635,7 @@
                 EditorUtility.SetDirty(target);
             } else {
                 HandleUtility.Repaint(); // to draw the new point placeholder handle
-                if (Event.current.type == EventType.MouseDown && !isWithinBounds)
+                if (Event.current.type == EventType.MouseDown && !isWithinBounds && Event.current.button == 0 && !Event.current.alt)
                     StopEditingShape(true);
             }
         }
@@ -788,6 +796,10 @@
                     EditorGUILayout.PropertyField(roundnessBRProp);
                 } else {
                     EditorGUILayout.PropertyField(roundnessProp);
+                    roundnessTLProp.floatValue = roundnessProp.floatValue;          
+                    roundnessTRProp.floatValue = roundnessProp.floatValue;          
+                    roundnessBLProp.floatValue = roundnessProp.floatValue;          
+                    roundnessBRProp.floatValue = roundnessProp.floatValue;          
                 }
             } else if (shapeType == ShapeType.Ellipse) {
                 //ellipse props

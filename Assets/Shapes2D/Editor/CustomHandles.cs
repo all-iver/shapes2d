@@ -37,9 +37,9 @@ namespace Shapes2D {
         };
 
 #if UNITY_5_6_OR_NEWER
-        public static Vector3 DragHandle(Vector3 position, float handleSize, Handles.CapFunction capFunc, Color colorSelected, out DragHandleResult result)
+        public static Vector3 DragHandle(Transform transform, Vector3 position, float handleSize, Handles.CapFunction capFunc, Color colorSelected, out DragHandleResult result)
 #else
-        public static Vector3 DragHandle(Vector3 position, float handleSize, Handles.DrawCapFunction capFunc, Color colorSelected, out DragHandleResult result)
+        public static Vector3 DragHandle(Transform transform, Vector3 position, float handleSize, Handles.DrawCapFunction capFunc, Color colorSelected, out DragHandleResult result)
 #endif
         {
             int id = GUIUtility.GetControlID(s_DragHandleHash, FocusType.Passive);
@@ -102,22 +102,20 @@ namespace Shapes2D {
                 if (GUIUtility.hotControl == id)
                 {
                     s_DragHandleMouseCurrent = Event.current.mousePosition;
-                    Vector3 worldPos = HandleUtility.GUIPointToWorldRay(s_DragHandleMouseCurrent).origin;
-                    position = Handles.matrix.inverse.MultiplyPoint(worldPos);
+                    var ray = HandleUtility.GUIPointToWorldRay(s_DragHandleMouseCurrent);
+                    var plane = new Plane(transform.TransformDirection(Vector3.back), transform.position);
+                    if (plane.Raycast(ray, out float rayDistance))
+                    {
+                        Vector3 intersectionPoint = ray.GetPoint(rayDistance);
+                        position = intersectionPoint;
 
-                    if (Camera.current.transform.forward == Vector3.forward || Camera.current.transform.forward == -Vector3.forward)
-                        position.z = s_DragHandleWorldStart.z;
-                    if (Camera.current.transform.forward == Vector3.up || Camera.current.transform.forward == -Vector3.up)
-                        position.y = s_DragHandleWorldStart.y;
-                    if (Camera.current.transform.forward == Vector3.right || Camera.current.transform.forward == -Vector3.right)
-                        position.x = s_DragHandleWorldStart.x;
+                        if (Event.current.button == 0)
+                            result = DragHandleResult.LMBDrag;
+                        else if (Event.current.button == 1)
+                            result = DragHandleResult.RMBDrag;
 
-                    if (Event.current.button == 0)
-                        result = DragHandleResult.LMBDrag;
-                    else if (Event.current.button == 1)
-                        result = DragHandleResult.RMBDrag;
-
-                    s_DragHandleHasMoved = true;
+                        s_DragHandleHasMoved = true;
+                    }
 
                     GUI.changed = true;
                     Event.current.Use();
@@ -131,9 +129,9 @@ namespace Shapes2D {
 
                 Handles.matrix = Matrix4x4.identity;
                 #if UNITY_5_6_OR_NEWER
-                    capFunc(id, screenPosition, Quaternion.identity, handleSize, EventType.Repaint);
+                    capFunc(id, screenPosition, transform.rotation, handleSize, EventType.Repaint);
                 #else
-                    capFunc(id, screenPosition, Quaternion.identity, handleSize);
+                    capFunc(id, screenPosition, transform.rotation, handleSize);
                 #endif
                 Handles.matrix = cachedMatrix;
 
