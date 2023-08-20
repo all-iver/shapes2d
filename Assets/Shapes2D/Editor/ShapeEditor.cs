@@ -1,6 +1,4 @@
-﻿using Unity.VisualScripting;
-
-namespace Shapes2D {
+﻿namespace Shapes2D {
 
     using UnityEngine;
     using UnityEditor;
