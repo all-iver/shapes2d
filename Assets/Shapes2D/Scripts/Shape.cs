@@ -1007,6 +1007,10 @@
             
             if (settings.shapeType == ShapeType.Rectangle) {
                 // rectangle specific properties
+                var tl = settings.roundnessPerCorner ? settings.roundnessTopLeft : settings.roundness;
+                var tr = settings.roundnessPerCorner ? settings.roundnessTopRight : settings.roundness;
+                var bl = settings.roundnessPerCorner ? settings.roundnessBottomLeft : settings.roundness;
+                var br = settings.roundnessPerCorner ? settings.roundnessBottomRight : settings.roundness;
                 if (spriteRenderer) {
                     // for sprite-based shapes it makes more sense to have roundness
                     // be a percentage of the dimensions so you can scale up and down
@@ -1014,22 +1018,14 @@
                     float xScale = shaderSettings.xScale;
                     float yScale = shaderSettings.yScale;
                     shaderSettings.roundnessVec = new Vector4(
-                            Mathf.Min(settings.roundnessTopLeft * xScale / 2, 
-                                settings.roundnessTopLeft * yScale / 2),
-                            Mathf.Min(settings.roundnessTopRight * xScale / 2, 
-                                settings.roundnessTopRight * yScale / 2),
-                            Mathf.Min(settings.roundnessBottomLeft * xScale / 2, 
-                                settings.roundnessBottomLeft * yScale / 2),
-                            Mathf.Min(settings.roundnessBottomRight * xScale / 2, 
-                                settings.roundnessBottomRight * yScale / 2));
+                            Mathf.Min(tl * xScale / 2, tl * yScale / 2),
+                            Mathf.Min(tr * xScale / 2, tr * yScale / 2),
+                            Mathf.Min(bl * xScale / 2, bl * yScale / 2),
+                            Mathf.Min(br * xScale / 2, br * yScale / 2));
                 } else {
                     // for UI components, roundness should be in world units so when 
                     // you scale the component the borders stay the same size
-                    shaderSettings.roundnessVec = new Vector4(
-                            settings.roundnessTopLeft,
-                            settings.roundnessTopRight, 
-                            settings.roundnessBottomLeft,
-                            settings.roundnessBottomRight);
+                    shaderSettings.roundnessVec = new Vector4(tl, tr, bl, br);
                 }
             } else if (settings.shapeType == ShapeType.Ellipse) {
                 // ellipse specific properties
@@ -1066,7 +1062,7 @@
                 if (shaderSettings.usePolygonMap) {
                     if (shaderSettings.polyMap == null) {
                         shaderSettings.polyMap = new Texture2D(PolyMapResolution, 
-                                PolyMapResolution, TextureFormat.ARGB32, false);
+                                PolyMapResolution, TextureFormat.ARGB32, false, true);
                         shaderSettings.polyMap.filterMode = FilterMode.Point;
                         shaderSettings.polyMap.wrapMode = TextureWrapMode.Clamp;
                     }
@@ -1308,8 +1304,7 @@
         // point normalized in the rect from -0.5 to 0.5 on x and y.  does not
         // clamp it to those ranges though.
         Vector2 NormalizePointInRect(Vector3[] corners, Vector3 point) {
-            if (!IsUIComponent())
-            {
+            if (!IsUIComponent()) {
                 return transform.InverseTransformPoint(point);
             }
             point -= corners[0];
@@ -1343,8 +1338,7 @@
         /// </summary>
         public Vector3[] GetPolygonWorldVertices() {
             Vector3[] verts3D = new Vector3[settings.polyVertices.Length];
-            if (!IsUIComponent())
-            {
+            if (!IsUIComponent()) {
                 return settings.polyVertices
                     .Select(v => transform.TransformPoint(v))
                     .ToArray();
@@ -1369,8 +1363,7 @@
         /// This is used by ShapeEditor when editing the polygon in the scene view.
         /// </summary>
         public void SetPolygonWorldVertices(Vector3[] verts3D) {
-            if (!IsUIComponent())
-            {
+            if (!IsUIComponent()) {
                 settings.polyVertices = verts3D
                     .Select(v => transform.InverseTransformPoint(v))
                     .Select(v => new Vector2(v.x, v.y))
@@ -1390,8 +1383,7 @@
         /// You may want to look at settings.pathSegments instead.
         /// </summary>
         public PathSegment[] GetPathWorldSegments() {
-            if (!IsUIComponent())
-            {
+            if (!IsUIComponent()) {
                 return settings.pathSegments
                     .Select(s => new PathSegment(
                         transform.TransformPoint(new Vector3(s.p0.x, s.p0.y, 0)),
@@ -1420,8 +1412,7 @@
         /// This is used by ShapeEditor when editing the path in the scene view.
         /// </summary>
         public void SetPathWorldSegments(PathSegment[] worldSegments) {
-            if (!IsUIComponent())
-            {
+            if (!IsUIComponent()) {
                 settings.pathSegments = worldSegments
                     .Select(s => new PathSegment(
                         transform.InverseTransformPoint(s.p0),
