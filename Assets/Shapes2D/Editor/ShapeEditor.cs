@@ -339,7 +339,7 @@
         void DrawShapeBorders(Shape shape) {
             Vector3[] corners = new Vector3[5];
             shape.GetWorldCorners(corners);
-            Handles.color = Color.red;
+            Handles.color = Color.white;
             Handles.DrawAAPolyLine(2f, corners);
         }
 
@@ -571,8 +571,7 @@
             // check if the mouse is hovering over a space where we could add a new point,
             // and draw it if so
             bool closeToExistingPoint = false;
-            if (!changed && !hasMaxSegments && !deleteMode)
-            {
+            if (!changed && !hasMaxSegments && !deleteMode) {
                 foreach (PathSegment s in segments) {
                     // if close to an existing point, we don't want to add a new one
                     if (Vector2.Distance(HandleUtility.WorldToGUIPoint(mouseWorldPos), 
@@ -614,7 +613,7 @@
                     Handles.color = Color.green;
                     Handles.DotHandleCap(-1, mouseWorldPos, Quaternion.identity, 0.05f * HandleUtility.GetHandleSize(mouseWorldPos), 
                         EventType.Repaint);
-                    
+
                     Handles.color = Color.grey;
                     Handles.DrawDottedLine(mouseWorldPos, closestPoint, HandleUtility.GetHandleSize(closestPoint));
                     Handles.color = oldColor;
