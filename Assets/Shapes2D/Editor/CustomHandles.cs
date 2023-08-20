@@ -106,8 +106,7 @@ namespace Shapes2D {
                     var plane = new Plane(transform.TransformDirection(Vector3.back), transform.position);
                     if (plane.Raycast(ray, out float rayDistance))
                     {
-                        Vector3 intersectionPoint = ray.GetPoint(rayDistance);
-                        position = intersectionPoint;
+                        position = ray.GetPoint(rayDistance);
 
                         if (Event.current.button == 0)
                             result = DragHandleResult.LMBDrag;
