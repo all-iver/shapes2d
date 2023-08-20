@@ -412,9 +412,6 @@
                     }
                 }
                 if (!snapped) {
-                    // not too close to an existing vert, so draw a new one.  don't
-                    // use an actual handle cause we want to intercept nearby clicks
-                    // and not just clicks directly on the handle.
                     var oldColor = Handles.color;
                     Handles.color = Color.green;
                     Handles.DotHandleCap(-1, closestPos, Quaternion.identity, 0.05f * HandleUtility.GetHandleSize(closestPos), 
@@ -607,8 +604,6 @@
                             closestDistance = dist;
                         }
                     }
-                    // don't use an actual handle cause we want to intercept nearby clicks
-                    // and not just clicks directly on the handle.
                     var oldColor = Handles.color;
                     Handles.color = Color.green;
                     Handles.DotHandleCap(-1, mouseWorldPos, Quaternion.identity, 0.05f * HandleUtility.GetHandleSize(mouseWorldPos), 
