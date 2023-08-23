@@ -4,6 +4,7 @@
     using UnityEngine.UI;
     using System.Collections.Generic;
     using UnityEngine.Serialization;
+    using System.Linq;
 
     /// <summary>
     /// Shapes2D base shape types.
@@ -62,13 +63,13 @@
     public struct PathSegment {
         public Vector3 p0, p1, p2;
 
-        public PathSegment(Vector2 p0, Vector2 p1, Vector3 p2) {
+        public PathSegment(Vector3 p0, Vector3 p1, Vector3 p2) {
             this.p0 = p0;
             this.p1 = p1;
             this.p2 = p2;
         }
 
-        public PathSegment(Vector2 p0, Vector2 p2) {
+        public PathSegment(Vector3 p0, Vector3 p2) {
             this.p0 = p0;
             this.p2 = p2;
             this.p1 = p0 + (p2 - p0) / 2;
@@ -923,8 +924,8 @@
                 bottomLeft = transform.InverseTransformPoint(bottomLeft);
                 topRight = transform.InverseTransformPoint(topRight);
                 bottomRight = transform.InverseTransformPoint(bottomRight);
-                size.x = Vector3.Distance(topLeft, topRight);
-                size.y = Vector3.Distance(topLeft, bottomLeft);
+                size.x = Vector2.Distance(topLeft, topRight);
+                size.y = Vector2.Distance(topLeft, bottomLeft);
                 size /= image.canvas.scaleFactor;
             } else {
                 return new Vector2(1, 1);
@@ -957,8 +958,8 @@
                 var scaleFactor = image.canvas.scaleFactor;
                 if (image.canvas.renderMode == RenderMode.ScreenSpaceCamera)
                     scaleFactor = image.canvas.transform.lossyScale.x;
-                size.x = Vector3.Distance(topLeft, topRight) / scaleFactor;
-                size.y = Vector3.Distance(topLeft, bottomLeft) / scaleFactor;
+                size.x = Vector2.Distance(topLeft, topRight) / scaleFactor;
+                size.y = Vector2.Distance(topLeft, bottomLeft) / scaleFactor;
             } else {
                 // get the size for normal Transform objects
                 size.x = transform.lossyScale.x;
@@ -1303,6 +1304,9 @@
         // point normalized in the rect from -0.5 to 0.5 on x and y.  does not
         // clamp it to those ranges though.
         Vector2 NormalizePointInRect(Vector3[] corners, Vector3 point) {
+            if (!IsUIComponent()) {
+                return transform.InverseTransformPoint(point);
+            }
             point -= corners[0];
             Vector2 x = corners[3] - corners[0];
             Vector2 y = corners[1] - corners[0];
@@ -1333,13 +1337,18 @@
         /// You may want to look at settings.polyVertices instead.
         /// </summary>
         public Vector3[] GetPolygonWorldVertices() {
+            Vector3[] verts3D = new Vector3[settings.polyVertices.Length];
+            if (!IsUIComponent()) {
+                return settings.polyVertices
+                    .Select(v => transform.TransformPoint(v))
+                    .ToArray();
+            }
             // get the world corners and interpolate to find the world coords.
             // we can't use the transform because RectTransform transforms 
             // based on the pivot and anchors rather than the center of the
             // actual image.
             Vector3[] corners = new Vector3[5];
             GetWorldCorners(corners);
-            Vector3[] verts3D = new Vector3[settings.polyVertices.Length];
             for (int i = 0; i < settings.polyVertices.Length; i++) {
                 Vector2 v2 = settings.polyVertices[i];
                 verts3D[i] = BiLerp(corners, v2);
@@ -1354,6 +1363,13 @@
         /// This is used by ShapeEditor when editing the polygon in the scene view.
         /// </summary>
         public void SetPolygonWorldVertices(Vector3[] verts3D) {
+            if (!IsUIComponent()) {
+                settings.polyVertices = verts3D
+                    .Select(v => transform.InverseTransformPoint(v))
+                    .Select(v => new Vector2(v.x, v.y))
+                    .ToArray();
+                return;
+            }
             Vector3[] corners = new Vector3[5];
             GetWorldCorners(corners);
             Vector2[] verts = new Vector2[verts3D.Length];
@@ -1367,6 +1383,14 @@
         /// You may want to look at settings.pathSegments instead.
         /// </summary>
         public PathSegment[] GetPathWorldSegments() {
+            if (!IsUIComponent()) {
+                return settings.pathSegments
+                    .Select(s => new PathSegment(
+                        transform.TransformPoint(new Vector3(s.p0.x, s.p0.y, 0)),
+                        transform.TransformPoint(new Vector3(s.p1.x, s.p1.y, 0)),
+                        transform.TransformPoint(new Vector3(s.p2.x, s.p2.y, 0))))
+                    .ToArray();
+            }
             // get the world corners and interpolate to find the world coords.
             // we can't use the transform because RectTransform transforms 
             // based on the pivot and anchors rather than the center of the
@@ -1388,6 +1412,15 @@
         /// This is used by ShapeEditor when editing the path in the scene view.
         /// </summary>
         public void SetPathWorldSegments(PathSegment[] worldSegments) {
+            if (!IsUIComponent()) {
+                settings.pathSegments = worldSegments
+                    .Select(s => new PathSegment(
+                        transform.InverseTransformPoint(s.p0),
+                        transform.InverseTransformPoint(s.p1),
+                        transform.InverseTransformPoint(s.p2)))
+                    .ToArray();
+                return;
+            }
             Vector3[] corners = new Vector3[5];
             GetWorldCorners(corners);
             PathSegment[] segments = new PathSegment[worldSegments.Length];
