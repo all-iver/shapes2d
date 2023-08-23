@@ -92,6 +92,7 @@
         }
         
         private static void BlendTextures(Texture2D dstTex, Texture2D srcTex) {
+            // fixme - it would be way faster to do this on the gpu
             for (int x = 0; x < dstTex.width; x++) {
                 for (int y = 0; y < dstTex.height; y++) {
                     Color src = srcTex.GetPixel(x, y);
@@ -224,8 +225,13 @@
             // shapes but not between a shape and the background color, so that's why
             // we have to do it manually.
             Texture2D dstTex = null;
+            // canvas.scaleFactor likes to get reset to 1 on layered shapes, so preserve it
+            float scaleFactor = 1;
+            if (canvas)
+                scaleFactor = canvas.scaleFactor;
             foreach (Shape s in shapes) {
                 if (canvas) {
+                    canvas.scaleFactor = scaleFactor;
                     Graphic g = s.GetComponent<Graphic>(); 
                     g.enabled = true;
                     if (s.GetComponent<Mask>() != null) {
