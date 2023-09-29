@@ -826,13 +826,24 @@
             material.SetFloat("_YScale", shaderSettings.yScale);
             material.SetFloat("_OutlineSize", shaderSettings.outlineSize);
             material.SetFloat("_Blur", shaderSettings.blur);
-            material.SetColor("_OutlineColor", shaderSettings.outlineColor);
+            // Colors from the inspector are in sRGB, but I found a unity forum post that says Unity is supposed to 
+            // convert to linear when you call material.SetColor().  however, we're not getting correct colors in
+            // linear color space unless we convert to linear here, so I'm not sure where it's going wrong.
+            var outlineColor = shaderSettings.outlineColor;
+            var fillColor = shaderSettings.fillColor;
+            var fillColor2 = shaderSettings.fillColor2;
+            if (QualitySettings.activeColorSpace == ColorSpace.Linear) {
+                outlineColor = outlineColor.linear;
+                fillColor = fillColor.linear;
+                fillColor2 = fillColor2.linear;
+            }
+            material.SetColor("_OutlineColor", outlineColor);
             if (shaderSettings.fillType >= FillType.SolidColor 
                     && shaderSettings.fillType < FillType.Texture)
-                material.SetColor("_FillColor", shaderSettings.fillColor);
+                material.SetColor("_FillColor", fillColor);
             if (shaderSettings.fillType >= FillType.Gradient
                     && shaderSettings.fillType < FillType.Texture)
-                material.SetColor("_FillColor2", shaderSettings.fillColor2);
+                material.SetColor("_FillColor2", fillColor2);
             if (shaderSettings.fillType > FillType.SolidColor) {
                 material.SetFloat("_FillRotation", shaderSettings.fillRotation);
                 material.SetFloat("_FillOffsetX", shaderSettings.fillOffset.x);
